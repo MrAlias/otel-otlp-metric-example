@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 )
 
 func NewMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
@@ -64,11 +65,31 @@ func NewOTLPExporter(ctx context.Context) (metric.Exporter, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
+	// Exponential back-off strategy.
+	backoffConf := backoff.DefaultConfig
+	// You can also change the base delay, multiplier, and jitter here.
+	backoffConf.MaxDelay = 240 * time.Second
+
+	conn, err := grpc.DialContext(
+		ctx,
+		"127.0.0.1:4317",
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+		grpc.WithConnectParams(grpc.ConnectParams{
+			Backoff: backoffConf,
+			// Connection timeout.
+			MinConnectTimeout: 5 * time.Second,
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return otlpmetricgrpc.New(ctx,
-		// Default collector endpoint
-		otlpmetricgrpc.WithEndpoint("127.0.0.1:4317"),
-		otlpmetricgrpc.WithInsecure(),
-		otlpmetricgrpc.WithDialOption(grpc.WithBlock()),
+		otlpmetricgrpc.WithGRPCConn(conn),
+		// WithTimeout sets the max amount of time the Exporter will attempt an
+		// export.
+		otlpmetricgrpc.WithTimeout(7*time.Second),
 	)
 }
 
