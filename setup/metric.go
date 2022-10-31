@@ -7,7 +7,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 	"go.opentelemetry.io/otel/sdk/metric/view"
@@ -87,15 +86,4 @@ func NewResource(context.Context) (*resource.Resource, error) {
 		semconv.ServiceInstanceIDKey.String(host),
 		attribute.String("env", "dev"),
 	))
-}
-
-func otelMetricsStart(exporter metric.Exporter, res *resource.Resource) *metric.MeterProvider {
-	meterProv := metric.NewMeterProvider(
-		metric.WithReader(metric.NewPeriodicReader(exporter)),
-		metric.WithResource(res),
-	)
-
-	global.SetMeterProvider(meterProv)
-
-	return meterProv
 }
