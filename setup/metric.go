@@ -7,6 +7,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 	"go.opentelemetry.io/otel/sdk/metric/view"
@@ -17,7 +18,7 @@ import (
 )
 
 func NewMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
-	exp, err := NewOTLPExporter(ctx)
+	exp, err := NewHTTPExporter(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func NewViews() ([]view.View, error) {
 		// "request.duration" use these buckets.
 		view.MatchInstrumentName("request.duration"),
 		view.WithSetAggregation(aggregation.ExplicitBucketHistogram{
-			Boundaries: []float64{0.01, 0.1, 1, 10, 100, 1000},
+			Boundaries: []float64{0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10},
 		}),
 	)
 	if err != nil {
@@ -61,7 +62,7 @@ func NewViews() ([]view.View, error) {
 	return views, err
 }
 
-func NewOTLPExporter(ctx context.Context) (metric.Exporter, error) {
+func NewGRPCExporter(ctx context.Context) (metric.Exporter, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
@@ -90,6 +91,32 @@ func NewOTLPExporter(ctx context.Context) (metric.Exporter, error) {
 		// WithTimeout sets the max amount of time the Exporter will attempt an
 		// export.
 		otlpmetricgrpc.WithTimeout(7*time.Second),
+	)
+}
+
+func NewHTTPExporter(ctx context.Context) (metric.Exporter, error) {
+	return otlpmetrichttp.New(
+		ctx,
+		otlpmetrichttp.WithInsecure(),
+		// WithTimeout sets the max amount of time the Exporter will attempt an
+		// export.
+		otlpmetrichttp.WithTimeout(7*time.Second),
+		otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig{
+			// Enabled indicates whether to not retry sending batches in case
+			// of export failure.
+			Enabled: true,
+			// InitialInterval the time to wait after the first failure before
+			// retrying.
+			InitialInterval: 1 * time.Second,
+			// MaxInterval is the upper bound on backoff interval. Once this
+			// value is reached the delay between consecutive retries will
+			// always be `MaxInterval`.
+			MaxInterval: 10 * time.Second,
+			// MaxElapsedTime is the maximum amount of time (including retries)
+			// spent trying to send a request/batch. Once this value is
+			// reached, the data is discarded.
+			MaxElapsedTime: 240 * time.Second,
+		}),
 	)
 }
 
