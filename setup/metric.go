@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregation"
-	"go.opentelemetry.io/otel/sdk/metric/view"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"google.golang.org/grpc"
@@ -29,38 +28,24 @@ func NewMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
 		return nil, err
 	}
 
-	views, err := NewViews()
-	if err != nil {
-		return nil, err
-	}
-
 	// Set the reader collection periord to 10 seconds (default 60).
 	reader := metric.NewPeriodicReader(exp, metric.WithInterval(10*time.Second))
 	meterProvider := metric.NewMeterProvider(
 		metric.WithResource(res),
-		metric.WithReader(reader, views...),
+		metric.WithReader(reader),
+		metric.WithView(metric.NewView(
+			// Have any instrument, from any instrumentation library, with the name
+			// "request.duration" use these buckets.
+			metric.Instrument{Name: "request.duration"},
+			metric.Stream{
+				Aggregation: aggregation.ExplicitBucketHistogram{
+					Boundaries: []float64{0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10},
+				},
+			},
+		)),
 	)
 
 	return meterProvider, nil
-}
-
-func NewViews() ([]view.View, error) {
-	views := make([]view.View, 0, 2)
-
-	v, err := view.New(
-		// Have any instrument, from any instrumentation library, with the name
-		// "request.duration" use these buckets.
-		view.MatchInstrumentName("request.duration"),
-		view.WithSetAggregation(aggregation.ExplicitBucketHistogram{
-			Boundaries: []float64{0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10},
-		}),
-	)
-	if err != nil {
-		return nil, err
-	}
-	views = append(views, v)
-
-	return views, err
 }
 
 func NewGRPCExporter(ctx context.Context) (metric.Exporter, error) {
