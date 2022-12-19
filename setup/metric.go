@@ -15,6 +15,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func NewMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
@@ -74,7 +75,7 @@ func NewGRPCExporter(ctx context.Context) (metric.Exporter, error) {
 	conn, err := grpc.DialContext(
 		ctx,
 		"127.0.0.1:4317",
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff: backoffConf,
