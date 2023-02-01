@@ -32,7 +32,7 @@ func NewApp(mp metric.MeterProvider) (*App, error) {
 
 	meter := mp.Meter(instName, metric.WithInstrumentationVersion(instVer))
 	var err error
-	app.reqDuration, err = meter.SyncInt64().Histogram(
+	app.reqDuration, err = meter.Int64Histogram(
 		"request.duration",
 		instrument.WithDescription("Time taken to perfrom a user request"),
 		instrument.WithUnit(unit.Milliseconds),
