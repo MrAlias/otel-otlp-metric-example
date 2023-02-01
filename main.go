@@ -11,7 +11,6 @@ import (
 	"github.com/MrAlias/otel-otlp-metric-example/setup"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	"go.opentelemetry.io/otel/metric/unit"
 )
 
@@ -24,7 +23,7 @@ const (
 type App struct {
 	MeterProvider metric.MeterProvider
 
-	reqDuration syncint64.Histogram
+	reqDuration instrument.Int64Histogram
 }
 
 func NewApp(mp metric.MeterProvider) (*App, error) {
