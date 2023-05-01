@@ -10,7 +10,6 @@ import (
 
 	"github.com/MrAlias/otel-otlp-metric-example/setup"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 )
 
 const (
@@ -22,7 +21,7 @@ const (
 type App struct {
 	MeterProvider metric.MeterProvider
 
-	reqDuration instrument.Int64Histogram
+	reqDuration metric.Int64Histogram
 }
 
 func NewApp(mp metric.MeterProvider) (*App, error) {
@@ -32,8 +31,8 @@ func NewApp(mp metric.MeterProvider) (*App, error) {
 	var err error
 	app.reqDuration, err = meter.Int64Histogram(
 		"request.duration",
-		instrument.WithDescription("Time taken to perfrom a user request"),
-		instrument.WithUnit("ms"),
+		metric.WithDescription("Time taken to perfrom a user request"),
+		metric.WithUnit("ms"),
 	)
 	return app, err
 }
