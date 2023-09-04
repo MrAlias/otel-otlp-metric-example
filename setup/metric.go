@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"google.golang.org/grpc"
@@ -38,7 +37,7 @@ func NewMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
 			// "request.duration" use these buckets.
 			metric.Instrument{Name: "request.duration"},
 			metric.Stream{
-				Aggregation: aggregation.ExplicitBucketHistogram{
+				Aggregation: metric.AggregationExplicitBucketHistogram{
 					Boundaries: []float64{0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10},
 				},
 			},
