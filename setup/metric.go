@@ -56,11 +56,9 @@ func NewGRPCExporter(ctx context.Context) (metric.Exporter, error) {
 	// You can also change the base delay, multiplier, and jitter here.
 	backoffConf.MaxDelay = 240 * time.Second
 
-	conn, err := grpc.DialContext(
-		ctx,
+	conn, err := grpc.NewClient(
 		"127.0.0.1:4317",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff: backoffConf,
 			// Connection timeout.
