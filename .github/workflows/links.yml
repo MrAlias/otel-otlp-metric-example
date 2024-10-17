@@ -12,8 +12,9 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: lycheeverse/lychee-action@v1.10.0
+    - uses: lycheeverse/lychee-action@v2.0.2
       with:
+        failIfEmpty: false
         args: >-
           -v -n "*.md" "**/*.md"
           --exclude "http://localhost*"
